@@ -1,0 +1,90 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: 'Stack to create blah'
+
+Parameters:
+  VpcId:
+    Description: xxxxxxxxx Test OCI VPC
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-xxxxxxxxxxxx
+
+  PublicSubnet:
+    Description: Public Subnet in us-east-1c
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-xxxxxxxxxxxxxx
+
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.medium
+
+  SSHKeyName:
+    Description: EC2 ssh key
+    Type: String
+    Default: xxxxxxx-TEST
+
+  ImageId:
+    Type: String
+    Description: 'Official blah'
+    Default: 'ami-xxxxxxxxxxxx'
+
+  EBSEncryption:
+    Type: String
+    Default: xxxxxxxxxxxxxxxxxxxxx
+
+  SecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Default: sg-xxxxxxxxxxxxxxxxx
+
+Resources:
+  EC2Discovery:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref SSHKeyName
+      SecurityGroupIds: !Ref SecurityGroupIds
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -ex
+            cp /usr/share/zoneinfo/America/Chicago /etc/localtime;
+            y;
+            chkconfig iptables off;
+            chkconfig ip6tables off;
+      Volumes:
+        -
+          Device: "/dev/sdf"
+          VolumeId: !Ref U01Volume
+      Tags:
+        -
+          Key: Name
+          Value: xxxxxxxxxxxxxxxx
+
+  U01Volume:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: us-east-1c
+      Encrypted: true
+      KmsKeyId: !Ref EBSEncryption
+      Size: 55
+      Tags:
+        -
+          Key: Name
+          Value: xxxxxxxxxxxxx
+      VolumeType: gp2
+
+  WebElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref EC2Discovery
+      Domain: vpc
+
+Outputs:
+  EC2Discovery:
+    Description: 'Ec2 instance EC2Discovery'
+    Value: !Ref EC2Discovery
+    Export:
+      Name: !Sub '${AWS::StackName}-EC2Discovery'
